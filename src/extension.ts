@@ -1,26 +1,74 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
+import { Disposable, ExtensionContext, TextEditorDecorationType, workspace } from 'vscode';
+import { registerAllCommands } from './commands';
+import { setDecorationStyle } from './decorations';
+import { updateCursorChangeListener } from './event-listeners';
+import { Constants, Evaluation, ExtensionConfig } from './types';
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+/**
+ * All user settings.
+ */
+export let $config: ExtensionConfig;
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "inline-math" is now active!');
+export abstract class Globals {
+	static decorations: {
+		[lineNumber: number]: Evaluation
+	};
+	static decorationType: TextEditorDecorationType;
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('inline-math.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from inline-math!');
-	});
-
-	context.subscriptions.push(disposable);
+	static onDidChangeActiveTextEditor: Disposable | undefined;
+	static onDidChangeVisibleTextEditors: Disposable | undefined;
+	static onDidChangeCursor: Disposable | undefined;
+	static onDidChangeDocument: Disposable | undefined;
 }
 
-// This method is called when your extension is deactivated
-export function deactivate() {}
+
+
+/**
+ * - Update all global variables
+ * - Update all decoration styles
+ * - Update decorations for all visible editors
+ * - Update all event listeners
+ */
+export function updateEverything(context: ExtensionContext) {
+	setDecorationStyle(context);
+	// updateDecorationsForAllVisibleEditors();
+
+	// updateChangeVisibleTextEditorsListener();
+	updateCursorChangeListener();
+	// updateDocumentChangeListener();
+	// updateChangedActiveTextEditorListener();
+}
+
+
+/**
+ * Dispose all known disposables (except `onDidChangeConfiguration`).
+ */
+export function disposeEverything() {
+	Globals.decorationType?.dispose();
+
+	Globals.onDidChangeVisibleTextEditors?.dispose();
+	Globals.onDidChangeActiveTextEditor?.dispose();
+	Globals.onDidChangeCursor?.dispose();
+}
+
+
+export function activate(context: ExtensionContext) {
+	function updateConfigAndEverything() {
+		$config = workspace.getConfiguration().get(Constants.SettingsPrefix) as ExtensionConfig;
+		disposeEverything();
+		if ($config.enabled) {
+			updateEverything(context);
+		}
+	}
+
+	updateConfigAndEverything();
+	registerAllCommands(context);
+
+	context.subscriptions.push(workspace.onDidChangeConfiguration(configurationChangeEvent => {
+		if (configurationChangeEvent.affectsConfiguration(Constants.SettingsPrefix)) {
+			updateConfigAndEverything();
+		}
+	}));
+}
+
+export function deactivate() { }

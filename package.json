@@ -2,6 +2,7 @@
   "name": "inline-math",
   "displayName": "inline-math",
   "description": "Evaluate math expressions right in your editor",
+  "publisher": "Ross Cooper",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.72.0"
@@ -9,15 +10,134 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onCommand:inline-math.helloWorld"
-  ],
   "main": "./out/extension.js",
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:inlineMath.toggle",
+    "onCommand:inlineMath.copyResult"
+  ],
   "contributes": {
     "commands": [
       {
-        "command": "inline-math.helloWorld",
-        "title": "Hello World"
+        "command": "inlineMath.toggle",
+        "title": "Toggle (Enable / Disable)"
+      },
+      {
+        "command": "inlineMath.copyResult",
+        "title": "Copy Result"
+      }
+    ],
+    "configuration": {
+      "properties": {
+        "inlineMath.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Controls all decorations and features (except commands)."
+        },
+        "inlineMath.messageTemplate": {
+          "type": "string",
+          "default": "$result",
+          "description": "Message Template ($result, $source)"
+        },
+        "inlineMath.messageMaxChars": {
+          "type": "number",
+          "default": 60,
+          "description": "Max message length"
+        },
+        "inlineMath.fontFamily": {
+          "type": "string",
+          "default": "",
+          "description": "Font family of inline message."
+        },
+        "inlineMath.fontWeight": {
+          "type": "string",
+          "enum": [
+            "100",
+            "200",
+            "300",
+            "400",
+            "normal",
+            "500",
+            "600",
+            "700",
+            "bold",
+            "800",
+            "900"
+          ],
+          "default": "normal",
+          "markdownDescription": "Font weight of inline message. `\"normal\"` is alias for 400, `\"bold\"` is alias for 700)."
+        },
+        "inlineMath.fontStyleItalic": {
+          "type": "boolean",
+          "default": true,
+          "description": "When enabled - shows inline message in italic font style."
+        },
+        "inlineMath.fontSize": {
+          "type": "string",
+          "default": "0.85em",
+          "markdownDescription": "Font size of inline message ([CSS units](https://developer.mozilla.org/en-US/docs/Web/CSS/length))."
+        },
+        "inlineMath.margin": {
+          "type": "string",
+          "default": "2ch",
+          "description": "Distance between the last word on the line and the start of inline message ([CSS units](https://developer.mozilla.org/en-US/docs/Web/CSS/length))."
+        },
+        "inlineMath.padding": {
+          "type": "string",
+          "default": "2px 1ch",
+          "markdownDescription": "Padding of the inline message",
+          "examples": [
+            "2px 1ch"
+          ]
+        },
+        "inlineMath.borderRadius": {
+          "type": "string",
+          "default": "5px",
+          "markdownDescription": "Border radius of the inline message",
+          "examples": [
+            "5px",
+            "5em 0px",
+            "0px 5em 5em 0px"
+          ]
+        }
+      }
+    },
+    "colors": [
+      {
+        "id": "inlineMath.background",
+        "defaults": {
+          "dark": "#00b7e420",
+          "light": "#00b7e420",
+          "highContrast": "#00b7e420"
+        },
+        "description": "Background color"
+      },
+      {
+        "id": "inlineMath.backgroundLight",
+        "defaults": {
+          "dark": "#00b7e420",
+          "light": "#00b7e420",
+          "highContrast": "#00b7e420"
+        },
+        "description": "Background color (Only in light themes)."
+      },
+      {
+        "id": "inlineMath.foreground",
+        "defaults": {
+          "dark": "#00b7e4",
+          "light": "#00b7e4",
+          "highContrast": "#00b7e4"
+        },
+        "description": "Text color"
+      },
+      {
+        "id": "inlineMath.foregroundLight",
+        "defaults": {
+          "dark": "#00b7e4",
+          "light": "#00b7e4",
+          "highContrast": "#00b7e4"
+        },
+        "description": "Text color (Only in light themes)."
       }
     ]
   },
@@ -30,16 +150,23 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@types/vscode": "^1.72.0",
     "@types/glob": "^8.0.0",
+    "@types/lodash": "^4.14.186",
     "@types/mocha": "^10.0.0",
     "@types/node": "16.x",
+    "@types/vscode": "^1.72.0",
     "@typescript-eslint/eslint-plugin": "^5.38.1",
     "@typescript-eslint/parser": "^5.38.1",
+    "@vscode/test-electron": "^2.1.5",
     "eslint": "^8.24.0",
     "glob": "^8.0.3",
+    "lodash": "^4.17.21",
+    "lru-cache": "^7.14.0",
+    "mathjs": "^11.3.0",
     "mocha": "^10.0.0",
-    "typescript": "^4.8.4",
-    "@vscode/test-electron": "^2.1.5"
+    "typescript": "^4.8.4"
+  },
+  "dependencies": {
+    "@emmetio/math-expression": "^1.0.4"
   }
 }
