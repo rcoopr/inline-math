@@ -3,7 +3,7 @@
   "displayName": "Inline Math",
   "description": "Evaluate math expressions right in your editor",
   "publisher": "RossCooper",
-  "version": "0.0.3",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.6.0"
   },
@@ -172,8 +172,5 @@
     "mocha": "^10.0.0",
     "typescript": "^4.8.4",
     "vsce": "^2.11.0"
-  },
-  "dependencies": {
-    "@emmetio/math-expression": "^1.0.4"
   }
 }
