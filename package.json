@@ -1,6 +1,6 @@
 {
   "name": "inline-math",
-  "displayName": "inline-math",
+  "displayName": "Inline Math",
   "description": "Evaluate math expressions right in your editor",
   "publisher": "Ross Cooper",
   "version": "0.0.1",
@@ -11,6 +11,11 @@
     "Other"
   ],
   "main": "./out/extension.js",
+  "icon": "assets/icon.png",
+  "galleryBanner": {
+    "color": "#302945",
+    "theme": "dark"
+  },
   "activationEvents": [
     "onStartupFinished",
     "onCommand:inlineMath.toggle",
@@ -20,11 +25,11 @@
     "commands": [
       {
         "command": "inlineMath.toggle",
-        "title": "Toggle (Enable / Disable)"
+        "title": "Toggle Inline Math"
       },
       {
         "command": "inlineMath.copyResult",
-        "title": "Copy Result"
+        "title": "Copy Math Result"
       }
     ],
     "configuration": {
@@ -142,12 +147,13 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "pnpm run compile",
+    "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "pnpm run compile && pnpm run lint",
+    "pretest": "npm run compile && pnpm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "echo \"No tests provided\"",
+    "vsce": "vsce"
   },
   "devDependencies": {
     "@types/glob": "^8.0.0",
@@ -164,7 +170,8 @@
     "lru-cache": "^7.14.0",
     "mathjs": "^11.3.0",
     "mocha": "^10.0.0",
-    "typescript": "^4.8.4"
+    "typescript": "^4.8.4",
+    "vsce": "^2.11.0"
   },
   "dependencies": {
     "@emmetio/math-expression": "^1.0.4"

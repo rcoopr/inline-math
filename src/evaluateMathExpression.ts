@@ -1,7 +1,7 @@
 import LRU from 'lru-cache';
 import { evaluate } from 'mathjs';
-import { TextEditor } from 'vscode';
-import { AggregatedEvaluations, Evaluation } from './types';
+import { Range, TextEditor } from 'vscode';
+import { Evaluation } from './types';
 
 function* generateSubselections(text: string) {
   const parts = text.split(' ');
@@ -21,7 +21,6 @@ function getResult(text: string): { result: string, source: string } {
   for (const subSelection of generateSubselections(text)) {
     const source = subSelection.join(' ');
     let result: any = resultsCache.get(source);
-    const e = evaluate;
 
     try {
       if (!result) {
@@ -41,26 +40,38 @@ function getResult(text: string): { result: string, source: string } {
   return {} as { result: string, source: string };
 }
 
-export function getEvaluations(editor: TextEditor): AggregatedEvaluations {
-  const evaluations: AggregatedEvaluations = {};
+export function getEvaluations(editor: TextEditor): Evaluation[] {
+  const evaluations: Evaluation[] = [];
 
   for (const selection of editor.selections) {
+    let range: Range | undefined = undefined;
     const start = selection.isReversed ? selection.active : selection.anchor;
-    const line = editor.document.lineAt(start.line);
 
-    const { result, source } = getResult(line.text);
+    if (selection.isEmpty) {
+      range = editor.document.lineAt(start.line).range;
+    } else {
+      range = new Range(start, selection.isReversed ? selection.anchor : selection.active);
+    }
+
+    const text = editor.document.getText(range).replace(/([\r\n]|  )+(\/\/\s)?/g, ' ');
+
+    if (text.length < 3) {
+      continue;
+    }
+
+    const { result, source } = getResult(text);
 
     if (result === undefined) {
       continue;
     }
 
     const evaluation: Evaluation = {
-      result: result,
-      source: source,
-      range: line.range,
+      result,
+      source,
+      range,
     };
 
-    evaluations[selection.start.line] = evaluation;
+    evaluations.push(evaluation);
   }
 
   return evaluations;

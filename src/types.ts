@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import { Range } from 'vscode';
 
 interface ExtensionConfigType {
@@ -54,10 +55,6 @@ export type Evaluation = {
 	source: string;
 	range: Range;
 };
-
-export interface AggregatedEvaluations {
-	[lineNumber: string]: Evaluation;
-}
 
 /**
  * All command ids contributed by this extensions.

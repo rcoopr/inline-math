@@ -1,5 +1,5 @@
 import { window, workspace } from 'vscode';
-import { updateDecorationsForAllVisibleEditors, updateDecorationsForEditor } from './decorations';
+import { updateDecorations, updateDecorationsForAllVisibleEditors } from './decorations';
 import { Globals } from './extension';
 
 /**
@@ -10,7 +10,7 @@ export function updateChangedActiveTextEditorListener(): void {
 
     Globals.onDidChangeActiveTextEditor = window.onDidChangeActiveTextEditor(textEditor => {
         if (textEditor) {
-            updateDecorationsForEditor(textEditor);
+            updateDecorations(textEditor);
         }
     });
 }
@@ -32,11 +32,7 @@ export function updateCursorChangeListener(): void {
     Globals.onDidChangeCursor?.dispose();
 
     Globals.onDidChangeCursor = window.onDidChangeTextEditorSelection(e => {
-        for (const selection of e.selections) {
-            if (selection.isEmpty) {
-                updateDecorationsForEditor(e.textEditor, selection);
-            }
-        }
+        updateDecorations();
     });
 }
 
@@ -47,13 +43,9 @@ export function updateDocumentChangeListener(): void {
     Globals.onDidChangeDocument?.dispose();
 
     Globals.onDidChangeDocument = workspace.onDidChangeTextDocument(e => {
-        const activeEditor = window.activeTextEditor;
-        if (activeEditor && e.document.uri === activeEditor.document.uri) {
-            for (const selection of activeEditor.selections) {
-                if (selection.isEmpty) {
-                    updateDecorationsForEditor(activeEditor, selection);
-                }
-            }
-        }
+        // const activeEditor = window.activeTextEditor;
+        // if (e.document.uri === activeEditor?.document.uri) {
+        updateDecorations();
+        // }
     });
 }

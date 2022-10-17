@@ -1,8 +1,8 @@
-import { Disposable, ExtensionContext, TextEditorDecorationType, workspace } from 'vscode';
+import { DecorationOptions, Disposable, ExtensionContext, TextEditorDecorationType, workspace } from 'vscode';
 import { registerAllCommands } from './commands';
-import { setDecorationStyle } from './decorations';
-import { updateCursorChangeListener } from './event-listeners';
-import { Constants, Evaluation, ExtensionConfig } from './types';
+import { setDecorationStyle, updateDecorationsForAllVisibleEditors } from './decorations';
+import { updateChangedActiveTextEditorListener, updateChangeVisibleTextEditorsListener, updateCursorChangeListener, updateDocumentChangeListener } from './event-listeners';
+import { Constants, ExtensionConfig } from './types';
 
 /**
  * All user settings.
@@ -10,9 +10,7 @@ import { Constants, Evaluation, ExtensionConfig } from './types';
 export let $config: ExtensionConfig;
 
 export abstract class Globals {
-	static decorations: {
-		[lineNumber: number]: Evaluation
-	};
+	static decorations: DecorationOptions[];
 	static decorationType: TextEditorDecorationType;
 
 	static onDidChangeActiveTextEditor: Disposable | undefined;
@@ -21,29 +19,27 @@ export abstract class Globals {
 	static onDidChangeDocument: Disposable | undefined;
 }
 
-
-
 /**
  * - Update all global variables
  * - Update all decoration styles
  * - Update decorations for all visible editors
  * - Update all event listeners
  */
-export function updateEverything(context: ExtensionContext) {
+export function refresh(context: ExtensionContext) {
 	setDecorationStyle(context);
-	// updateDecorationsForAllVisibleEditors();
 
-	// updateChangeVisibleTextEditorsListener();
 	updateCursorChangeListener();
-	// updateDocumentChangeListener();
-	// updateChangedActiveTextEditorListener();
+	updateDocumentChangeListener();
+	updateDecorationsForAllVisibleEditors();
+	updateChangeVisibleTextEditorsListener();
+	updateChangedActiveTextEditorListener();
 }
 
 
 /**
  * Dispose all known disposables (except `onDidChangeConfiguration`).
  */
-export function disposeEverything() {
+export function dispose() {
 	Globals.decorationType?.dispose();
 
 	Globals.onDidChangeVisibleTextEditors?.dispose();
@@ -55,9 +51,9 @@ export function disposeEverything() {
 export function activate(context: ExtensionContext) {
 	function updateConfigAndEverything() {
 		$config = workspace.getConfiguration().get(Constants.SettingsPrefix) as ExtensionConfig;
-		disposeEverything();
+		dispose();
 		if ($config.enabled) {
-			updateEverything(context);
+			refresh(context);
 		}
 	}
 

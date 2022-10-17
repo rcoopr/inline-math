@@ -1,7 +1,7 @@
-import { DecorationInstanceRenderOptions, DecorationOptions, DecorationRenderOptions, ExtensionContext, Range, TextEditor, ThemableDecorationAttachmentRenderOptions, ThemeColor, window } from 'vscode';
+import { DecorationInstanceRenderOptions, DecorationOptions, DecorationRenderOptions, ExtensionContext, ThemableDecorationAttachmentRenderOptions, ThemeColor, window } from 'vscode';
 import { getEvaluations } from './evaluateMathExpression';
 import { $config, Globals } from './extension';
-import { AggregatedEvaluations, Constants, Evaluation } from './types';
+import { Constants, Evaluation } from './types';
 
 /**
  * Update all decoration styles: editor, gutter, status bar
@@ -9,10 +9,10 @@ import { AggregatedEvaluations, Constants, Evaluation } from './types';
 export function setDecorationStyle(_extensionContext: ExtensionContext) {
     Globals.decorationType?.dispose();
 
-    const background = new ThemeColor('inlineMath.background');
-    const foreground = new ThemeColor('inlineMath.foreground');
-    const backgroundLight = new ThemeColor('inlineMath.backgroundLight');
-    const foregroundLight = new ThemeColor('inlineMath.foregroundLight');
+    const background = new ThemeColor(`${Constants.SettingsPrefix}.background`);
+    const foreground = new ThemeColor(`${Constants.SettingsPrefix}.foreground`);
+    const backgroundLight = new ThemeColor(`${Constants.SettingsPrefix}.backgroundLight`);
+    const foregroundLight = new ThemeColor(`${Constants.SettingsPrefix}.foregroundLight`);
 
     const onlyDigitsRegExp = /^\d+$/;
     const fontFamily = $config.fontFamily ? `font-family:${$config.fontFamily}` : '';
@@ -48,57 +48,16 @@ export function setDecorationStyle(_extensionContext: ExtensionContext) {
     Globals.decorationType = window.createTextEditorDecorationType(decorationRenderOptions);
 }
 
-/**
- * Utility to create a decoration given an evaluation
- */
-function createDecorationOption(evaluation: Evaluation): DecorationOptions {
-    const message = evaluationToInlineMessage($config.messageTemplate, evaluation);
-
-    const decorationInstanceRenderOptions: DecorationInstanceRenderOptions = {
-        after: {
-            contentText: message,
-        },
-    };
-
-    return {
-        range: evaluation.range,
-        renderOptions: decorationInstanceRenderOptions,
-    };
-}
-
-let previousLineNumber = 9999999;
-/**
- * Actually apply decorations for editor.
- * @param range Only allow decorating lines in this range.
- */
-export function performUpdateDecorations(editor: TextEditor, aggregatedEvaluations: AggregatedEvaluations, range?: Range) {
-    const decorationOptions: DecorationOptions[] = [];
-
-    const activeLine = editor.selection.start.line;
-    if (activeLine !== previousLineNumber) {
-        editor.setDecorations(Globals.decorationType, []);
-        previousLineNumber = activeLine;
-    }
-
-    const activeLineEvaluation = aggregatedEvaluations[activeLine];
-
-    if (activeLineEvaluation) {
-        decorationOptions.push(createDecorationOption(activeLineEvaluation));
-    }
-
-    editor.setDecorations(Globals.decorationType, decorationOptions);
-}
-
 export function updateDecorationsForAllVisibleEditors() {
     for (const editor of window.visibleTextEditors) {
-        updateDecorationsForEditor(editor);
+        updateDecorations(editor);
     }
 }
 
 /**
  * Update decorations for one editor.
  */
-export function updateDecorationsForEditor(editor = window.activeTextEditor, range?: Range) {
+export function updateDecorations(editor = window.activeTextEditor) {
     if (!editor) {
         return;
     }
@@ -107,8 +66,14 @@ export function updateDecorationsForEditor(editor = window.activeTextEditor, ran
         return;
     }
 
+    // If editor is not active, remove all decorations without altering global store
+    if (editor.document.uri !== window.activeTextEditor?.document.uri) {
+        editor.setDecorations(Globals.decorationType, []);
+    }
+
     if (editor.viewColumn === undefined) {
-        performUpdateDecorations(editor, {});
+        Globals.decorations = [];
+        editor.setDecorations(Globals.decorationType, Globals.decorations);
         return;
     }
 
@@ -118,12 +83,14 @@ export function updateDecorationsForEditor(editor = window.activeTextEditor, ran
         editorText.includes(Constants.MergeConflictSymbol2) ||
         editorText.includes(Constants.MergeConflictSymbol3)
     ) {
-        performUpdateDecorations(editor, {});
+        Globals.decorations = [];
+        editor.setDecorations(Globals.decorationType, Globals.decorations);
         return;
     }
 
-    const aggregatedEvaluations = getEvaluations(editor) ?? {};
-    performUpdateDecorations(editor, aggregatedEvaluations, range);
+    const evaluations = getEvaluations(editor) ?? {};
+    Globals.decorations = evaluations.map(evaluation => createDecorationOption(evaluation));
+    editor.setDecorations(Globals.decorationType, Globals.decorations);
 }
 
 /**
@@ -157,6 +124,24 @@ export function evaluationToInlineMessage(template: string, evaluation: Evaluati
 
         return message;
     }
+}
+
+/**
+ * Utility to create a decoration given an evaluation
+ */
+function createDecorationOption(evaluation: Evaluation): DecorationOptions {
+    const message = evaluationToInlineMessage($config.messageTemplate, evaluation);
+
+    const decorationInstanceRenderOptions: DecorationInstanceRenderOptions = {
+        after: {
+            contentText: message,
+        },
+    };
+
+    return {
+        range: evaluation.range,
+        renderOptions: decorationInstanceRenderOptions,
+    };
 }
 
 /**
