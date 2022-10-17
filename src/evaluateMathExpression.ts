@@ -1,4 +1,4 @@
-// import LRU from 'lru-cache';
+import LRU from 'lru-cache';
 import { evaluate } from 'mathjs';
 import { Range, TextEditor } from 'vscode';
 import { Evaluation } from './types';
@@ -13,21 +13,21 @@ function* generateSubselections(text: string) {
   }
 }
 
-// const resultsCache = new LRU({
-//   max: 500
-// });
+const resultsCache = new LRU({
+  max: 500,
+});
 
 function getResult(text: string): { result: string; source: string } {
   for (const subSelection of generateSubselections(text)) {
     const source = subSelection.join(' ');
-    // let result: any = resultsCache.get(source);
-    let result: any;
+    let result: any = resultsCache.get(source);
+    // let result: any;
 
     try {
       if (!result) {
         const raw = evaluate(source);
         result = raw.toString();
-        // resultsCache.set(source, result);
+        resultsCache.set(source, result);
       }
       if (result) {
         return {
