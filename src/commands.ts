@@ -5,6 +5,7 @@ import { CommandId, Constants } from "./types";
 
 export function registerAllCommands(extensionContext: ExtensionContext) {
     const disposableToggleInlineMath = commands.registerCommand(CommandId.toggle, () => {
+        window.showInformationMessage(`Inline Math ${$config.enabled ? 'disabled' : 'enabled'}`);
         updateGlobalSetting(`${Constants.SettingsPrefix}.enabled`, !$config.enabled);
     });
 
