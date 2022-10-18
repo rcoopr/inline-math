@@ -9,30 +9,27 @@ export function registerAllCommands(extensionContext: ExtensionContext) {
     updateGlobalSetting(`${Constants.SettingsPrefix}.enabled`, !$config.enabled);
   });
 
-  const disposableCopyResult = commands.registerTextEditorCommand(
-    CommandId.copyResult,
-    (editor) => {
-      if (!$config.enabled) {
-        window.showInformationMessage('Inline Math is not enabled');
-        return;
-      }
-
-      if (Decorator.decorations.length === 0) {
-        window.showInformationMessage("There's no evaluations available.");
-        return;
-      }
-
-      const decorations = Decorator.decorations.slice();
-      const copyText = decorations
-        .sort(
-          (decorationA, decorationB) => decorationA.range.start.line - decorationB.range.start.line
-        )
-        .map((decoration) => decoration.renderOptions?.after?.contentText)
-        .join('\n');
-
-      env.clipboard.writeText(copyText);
+  const disposableCopyResult = commands.registerTextEditorCommand(CommandId.copyResult, () => {
+    if (!$config.enabled) {
+      window.showInformationMessage('Inline Math is not enabled');
+      return;
     }
-  );
+
+    if (Decorator.decorations.length === 0) {
+      window.showInformationMessage("There's no evaluations available.");
+      return;
+    }
+
+    const decorations = Decorator.decorations.slice();
+    const copyText = decorations
+      .sort(
+        (decorationA, decorationB) => decorationA.range.start.line - decorationB.range.start.line
+      )
+      .map((decoration) => decoration.renderOptions?.after?.contentText)
+      .join('\n');
+
+    env.clipboard.writeText(copyText);
+  });
 
   extensionContext.subscriptions.push(disposableToggleInlineMath, disposableCopyResult);
 }

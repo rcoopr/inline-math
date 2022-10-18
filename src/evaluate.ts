@@ -3,7 +3,7 @@ import { evaluate } from 'mathjs';
 import { Range, Selection, TextEditor } from 'vscode';
 import { Evaluation } from './types';
 
-const resultsCache = new LRU({
+const resultsCache = new LRU<string, { source: string; result: string }>({
   max: 500,
 
   // maxSize: 240,
@@ -38,52 +38,77 @@ function getEvaluation(editor: TextEditor, selection: Selection) {
   }
 
   const { result, source } = getResult(text);
+  console.log(`{ s: ${source} // r: ${result} // t: ${text} }`);
 
-  if (result === undefined) {
-    return undefined;
+  if (isDesirableResult(source, result)) {
+    const evaluation: Evaluation = {
+      result,
+      source,
+      range: new Range(start, line.end),
+    };
+
+    return evaluation;
   }
-
-  const evaluation: Evaluation = {
-    result,
-    source,
-    range: new Range(start, line.end),
-  };
-
-  return evaluation;
+  return undefined;
 }
 
 function getResult(text: string): { result: string; source: string } {
-  let result = resultsCache.get(text) as string | undefined;
+  let evaluation = resultsCache.get(text);
 
-  for (const subSelection of generateSubselections(text)) {
-    const source = subSelection.join(' ').trim();
+  if (evaluation) {
+    return evaluation;
+  }
 
-    if (!result) {
+  if (!evaluation) {
+    // generateSubselections provide subsets in size order, so we always get the largest subSelection
+    for (const subSelection of generateSubselections(text)) {
+      const source = subSelection.join(' ');
+
       try {
         const raw = evaluate(source);
-        result = raw.toString();
-        resultsCache.set(text, result);
+        evaluation = { result: raw.toString(), source };
+        resultsCache.set(text, evaluation);
+
+        // Early return once a result has been parsed
+        return evaluation;
       } catch (_) {
         // Error during evaluation - expected.
         // In this case, do not return - try the next subSelection
       }
     }
-
-    if (isDesirableResult(source, result)) {
-      return {
-        result,
-        source,
-      };
-    }
   }
 
   return {} as { result: string; source: string };
+
+  // for (const subSelection of generateSubselections(text)) {
+  //   const source = subSelection.join(' ');
+
+  //   if (!evaluation) {
+  //     try {
+  //       const raw = evaluate(source);
+  //       evaluation = raw.toString();
+  //       resultsCache.set(text, evaluation);
+  //     } catch (_) {
+  //       // Error during evaluation - expected.
+  //       // In this case, do not return - try the next subSelection
+  //     }
+  //   }
+
+  //   if (isDesirableResult(source, evaluation)) {
+  //     return {
+  //       result: evaluation,
+  //       source,
+  //     };
+  //   }
+  // }
+
+  // return {} as { result: string; source: string };
 }
 
 function isDesirableResult(source: string, result: string | undefined): result is string {
   return (
     result !== undefined &&
-    result !== source &&
+    result !== source.trim() &&
     source !== `'${result}'` &&
     !result.startsWith('function')
   );
