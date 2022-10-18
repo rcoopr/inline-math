@@ -20,7 +20,7 @@ const resultsCache = new LRU({
 function getResult(text: string): { result: string; source: string } {
   for (const subSelection of generateSubselections(text)) {
     const source = subSelection.join(' ');
-    let result: any = resultsCache.get(source);
+    let result = resultsCache.get(source) as string | undefined;
     // let result: any;
 
     try {
@@ -29,7 +29,7 @@ function getResult(text: string): { result: string; source: string } {
         result = raw.toString();
         resultsCache.set(source, result);
       }
-      if (result) {
+      if (result && result !== source && !result.startsWith('function')) {
         return {
           result,
           source,
