@@ -175,10 +175,10 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "pnpm run compile -- --minify",
+    "vscode:prepublish": "npm run compile -- --minify",
     "compile": "rimraf out && esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
     "watch": "tsc -watch -p ./",
-    "pretest": "pnpm run compile && pnpm run lint",
+    "pretest": "npm run compile && pnpm run lint",
     "lint": "eslint src --ext ts",
     "test": "echo \"No tests provided\"",
     "vsce": "vsce"
@@ -203,7 +203,6 @@
   "dependencies": {
     "lodash.debounce": "^4.0.8",
     "lru-cache": "^7.14.0",
-    "mathjax-full": "^3.2.2",
     "mathjs": "^11.3.0"
   }
 }
