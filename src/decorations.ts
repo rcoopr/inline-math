@@ -3,6 +3,7 @@ import {
   DecorationOptions,
   DecorationRenderOptions,
   ExtensionContext,
+  MarkdownString,
   ThemableDecorationAttachmentRenderOptions,
   ThemeColor,
   window,
@@ -107,7 +108,7 @@ export function evaluationToInlineMessage(
   if (evaluation.result === null || $config.messageMaxChars === 0) {
     return undefined;
   }
-  let message = evaluation.result.toString();
+  let message = evaluation.result;
 
   if (template === TemplateVars.result) {
     // When default template - no need to use RegExps or other stuff.
@@ -121,10 +122,14 @@ export function evaluationToInlineMessage(
      * If absent - replace by RegExp removing all adjacent non-whitespace symbols with them.
      */
     if (template.includes(TemplateVars.source)) {
-      const messageWithSource = message.replace(TemplateVars.source, String(evaluation.source));
-      if (messageWithSource.length <= $config.messageMaxChars) {
-        message = messageWithSource;
+      let sourceTruncated = evaluation.source;
+      const sourceLength = evaluation.source.length;
+
+      if (sourceLength > $config.messageMaxChars) {
+        sourceTruncated = sourceTruncated.substring(0, sourceLength - 3) + '...';
       }
+
+      message = message.replace(TemplateVars.source, sourceTruncated);
     }
 
     return message;
@@ -143,9 +148,30 @@ function createDecorationOption(evaluation: Evaluation): DecorationOptions {
     },
   };
 
+  let hoverMessage: MarkdownString | undefined = undefined;
+
+  if ($config.hoverMessage) {
+    hoverMessage = new MarkdownString();
+
+    (hoverMessage.supportHtml = true),
+      hoverMessage.appendMarkdown(`
+  <table>
+  <tr align="left">
+    <th>Source</th>
+    <td>${evaluation.source}</td>
+  </tr>
+  <tr align="left">
+    <th>Result</th>
+    <td>${evaluation.result}</td>
+  </tr>
+</table>
+`);
+  }
+
   return {
     range: evaluation.range,
     renderOptions: decorationInstanceRenderOptions,
+    hoverMessage: hoverMessage,
   };
 }
 

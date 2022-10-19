@@ -47,7 +47,17 @@
         "inlineMath.messageMaxChars": {
           "type": "number",
           "default": 60,
-          "description": "Max message length"
+          "description": "Max source length"
+        },
+        "inlineMath.hoverMessage": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show hover message on decoration?"
+        },
+        "inlineMath.delay": {
+          "type": "number",
+          "default": 500,
+          "description": "Delay calculating after cursor move (debounce). 0 will have no delay"
         },
         "inlineMath.fontFamily": {
           "type": "string",
@@ -147,16 +157,17 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile -- --minify",
+    "vscode:prepublish": "pnpm run compile -- --minify",
     "compile": "rimraf out && esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
     "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && pnpm run lint",
+    "pretest": "pnpm run compile && pnpm run lint",
     "lint": "eslint src --ext ts",
     "test": "echo \"No tests provided\"",
     "vsce": "vsce"
   },
   "devDependencies": {
     "@types/glob": "^8.0.0",
+    "@types/lodash.debounce": "^4.0.7",
     "@types/mocha": "^10.0.0",
     "@types/node": "16.x",
     "@types/vscode": "^1.6.0",
@@ -172,7 +183,9 @@
     "vsce": "^2.11.0"
   },
   "dependencies": {
+    "lodash.debounce": "^4.0.8",
     "lru-cache": "^7.14.0",
+    "mathjax-full": "^3.2.2",
     "mathjs": "^11.3.0"
   }
 }

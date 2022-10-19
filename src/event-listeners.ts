@@ -1,6 +1,7 @@
+import debounce from 'lodash.debounce';
 import { window, workspace } from 'vscode';
 import { updateDecorations, updateDecorationsForAllVisibleEditors } from './decorations';
-import { Decorator } from './extension';
+import { $config, Decorator } from './extension';
 
 /**
  * Update listener for when active editor changes.
@@ -31,9 +32,10 @@ export function updateChangeVisibleTextEditorsListener(): void {
  */
 export function updateCursorChangeListener(): void {
   Decorator.onDidChangeCursor?.dispose();
+  const debouncedUpdateDecorations = debounce(() => updateDecorations(), $config.delay);
 
-  Decorator.onDidChangeCursor = window.onDidChangeTextEditorSelection((e) => {
-    updateDecorations();
+  Decorator.onDidChangeCursor = window.onDidChangeTextEditorSelection(() => {
+    debouncedUpdateDecorations();
   });
 }
 
@@ -42,11 +44,12 @@ export function updateCursorChangeListener(): void {
  */
 export function updateDocumentChangeListener(): void {
   Decorator.onDidChangeDocument?.dispose();
+  const debouncedUpdateDecorations = debounce(() => updateDecorations(), $config.delay);
 
   Decorator.onDidChangeDocument = workspace.onDidChangeTextDocument((e) => {
     // const activeEditor = window.activeTextEditor;
     // if (e.document.uri === activeEditor?.document.uri) {
-    updateDecorations();
+    debouncedUpdateDecorations();
     // }
   });
 }

@@ -38,9 +38,9 @@ function getEvaluation(editor: TextEditor, selection: Selection) {
   }
 
   const { result, source } = getResult(text);
-  console.log(`{ s: ${source} // r: ${result} // t: ${text} }`);
+  // console.log(`{ s: ${source} // r: ${result} // t: ${text} }`);
 
-  if (isDesirableResult(source, result)) {
+  if (result) {
     const evaluation: Evaluation = {
       result,
       source,
@@ -62,15 +62,18 @@ function getResult(text: string): { result: string; source: string } {
   if (!evaluation) {
     // generateSubselections provide subsets in size order, so we always get the largest subSelection
     for (const subSelection of generateSubselections(text)) {
-      const source = subSelection.join(' ');
+      const source = subSelection.join(' ').trim();
 
       try {
         const raw = evaluate(source);
-        evaluation = { result: raw.toString(), source };
-        resultsCache.set(text, evaluation);
+        const result = raw.toString();
+        if (isDesirableResult(source, result)) {
+          evaluation = { result, source };
+          resultsCache.set(text, evaluation);
 
-        // Early return once a result has been parsed
-        return evaluation;
+          // Early return once a result has been parsed
+          return evaluation;
+        }
       } catch (_) {
         // Error during evaluation - expected.
         // In this case, do not return - try the next subSelection
@@ -79,37 +82,15 @@ function getResult(text: string): { result: string; source: string } {
   }
 
   return {} as { result: string; source: string };
-
-  // for (const subSelection of generateSubselections(text)) {
-  //   const source = subSelection.join(' ');
-
-  //   if (!evaluation) {
-  //     try {
-  //       const raw = evaluate(source);
-  //       evaluation = raw.toString();
-  //       resultsCache.set(text, evaluation);
-  //     } catch (_) {
-  //       // Error during evaluation - expected.
-  //       // In this case, do not return - try the next subSelection
-  //     }
-  //   }
-
-  //   if (isDesirableResult(source, evaluation)) {
-  //     return {
-  //       result: evaluation,
-  //       source,
-  //     };
-  //   }
-  // }
-
-  // return {} as { result: string; source: string };
 }
 
 function isDesirableResult(source: string, result: string | undefined): result is string {
+  const trimmed = source.trim();
   return (
     result !== undefined &&
-    result !== source.trim() &&
-    source !== `'${result}'` &&
+    result !== trimmed &&
+    // handles 'source' === result && "source" === result
+    result !== trimmed.substring(1, source.length - 1) &&
     !result.startsWith('function')
   );
 }
