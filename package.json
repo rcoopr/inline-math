@@ -7,8 +7,26 @@
   "engines": {
     "vscode": "^1.6.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Froskk/inline-math.git"
+  },
+  "homepage": "https://github.com/Froskk/inline-math/blob/main/README.md",
+  "bugs": {
+    "url": "https://github.com/Froskk/inline-math/issues"
+  },
   "categories": [
-    "Other"
+    "Other",
+    "Visualization",
+    "Programming Languages",
+    "Education"
+  ],
+  "keywords": [
+    "inline",
+    "math",
+    "mathjs",
+    "expressions",
+    "evaluation"
   ],
   "main": "./out/extension.js",
   "icon": "assets/icon.png",
@@ -46,7 +64,7 @@
         },
         "inlineMath.messageMaxChars": {
           "type": "number",
-          "default": 60,
+          "default": 30,
           "description": "Max source length"
         },
         "inlineMath.hoverMessage": {
