@@ -1,14 +1,29 @@
 import LRU from 'lru-cache';
 import { evaluate } from 'mathjs';
+import { performance } from 'perf_hooks';
 import { Range, Selection, TextEditor } from 'vscode';
 import { Evaluation } from './types';
 
-const resultsCache = new LRU<string, { source: string; result: string }>({
-  max: 500,
+type EvaluationResult = {
+  source: string;
+  result: string;
+  desirable: boolean;
+};
 
-  // maxSize: 240,
-  // // @ts-expect-error we will only store strings
-  // sizeCalculation: (s, k) => s.length,
+/**
+ * Cache will contain:
+ *  - [Entire line's text as string, { source: subselection, result } ]
+ */
+const resultCache = new LRU<string, EvaluationResult>({
+  max: 300,
+});
+
+/**
+ * Cache will contain:
+ *  - [Subselection, result]
+ */
+const subselectionCache = new LRU<string, string | null>({
+  max: 600,
 });
 
 export function getEvaluations(editor: TextEditor): Evaluation[] {
@@ -37,10 +52,19 @@ function getEvaluation(editor: TextEditor, selection: Selection) {
     return undefined;
   }
 
-  const { result, source } = getResult(text);
-  // console.log(`{ s: ${source} // r: ${result} // t: ${text} }`);
+  let res: EvaluationResult = {} as EvaluationResult;
+  if (resultCache.has(text)) {
+    console.log('cache hit');
+    res = resultCache.get(text)!;
+  } else {
+    console.log('cache miss');
+    res = getResult(text);
+    resultCache.set(text, res);
+  }
 
-  if (result) {
+  const { result, source, desirable } = res;
+
+  if (desirable) {
     const evaluation: Evaluation = {
       result,
       source,
@@ -49,39 +73,44 @@ function getEvaluation(editor: TextEditor, selection: Selection) {
 
     return evaluation;
   }
+
   return undefined;
 }
 
-function getResult(text: string): { result: string; source: string } {
-  let evaluation = resultsCache.get(text);
+function getResult(text: string): EvaluationResult {
+  // generateSubselections provide subsets in size order, so we always get the largest subSelection
+  for (const subSelection of generateSubselections(text)) {
+    const source = subSelection.join(' ').trim();
+    if (subselectionCache.has(source)) {
+      console.log('subcache hit');
+      const result = subselectionCache.get(source);
 
-  if (evaluation) {
-    return evaluation;
-  }
-
-  if (!evaluation) {
-    // generateSubselections provide subsets in size order, so we always get the largest subSelection
-    for (const subSelection of generateSubselections(text)) {
-      const source = subSelection.join(' ').trim();
-
+      if (result) {
+        return { result, source, desirable: isDesirableResult(source, result) };
+      } else {
+        return {} as EvaluationResult;
+      }
+    } else {
+      console.log('subcache miss');
       try {
+        // If the string is not calculable, this will throw
         const raw = evaluate(source);
-        const result = raw.toString();
-        if (isDesirableResult(source, result)) {
-          evaluation = { result, source };
-          resultsCache.set(text, evaluation);
 
-          // Early return once a result has been parsed
-          return evaluation;
-        }
+        // So here, we have a result
+        const result = raw.toString();
+        subselectionCache.set(source, result);
+
+        // Include `desirable` prop here so it is also cached - otherwise could simply add a check to parent function
+        return { result, source, desirable: isDesirableResult(source, result) };
       } catch (_) {
         // Error during evaluation - expected.
         // In this case, do not return - try the next subSelection
+        subselectionCache.set(source, null);
       }
     }
   }
 
-  return {} as { result: string; source: string };
+  return {} as EvaluationResult;
 }
 
 function isDesirableResult(source: string, result: string | undefined): result is string {
