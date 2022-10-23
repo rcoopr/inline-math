@@ -54,10 +54,8 @@ function getEvaluation(editor: TextEditor, selection: Selection) {
 
   let res: EvaluationResult = {} as EvaluationResult;
   if (resultCache.has(text)) {
-    console.log('cache hit');
     res = resultCache.get(text)!;
   } else {
-    console.log('cache miss');
     res = getResult(text);
     resultCache.set(text, res);
   }
@@ -82,7 +80,6 @@ function getResult(text: string): EvaluationResult {
   for (const subSelection of generateSubselections(text)) {
     const source = subSelection.join(' ').trim();
     if (subselectionCache.has(source)) {
-      console.log('subcache hit');
       const result = subselectionCache.get(source);
 
       if (result) {
@@ -91,7 +88,6 @@ function getResult(text: string): EvaluationResult {
         return {} as EvaluationResult;
       }
     } else {
-      console.log('subcache miss');
       try {
         // If the string is not calculable, this will throw
         const raw = evaluate(source);
